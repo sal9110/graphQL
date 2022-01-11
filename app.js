@@ -3,7 +3,7 @@ const express = require("express")
 const { ApolloServer } = require("apollo-server-express")
 const { ApolloServerPluginDrainHttpServer } = require("apollo-server-core")
 const { typeDefs } = require("./schema/schema")
-const { Query, Book, Author, Mutation } = require("./resolvers")
+const resolvers = require("./resolvers")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const http = require("http")
@@ -20,7 +20,7 @@ async function startApolloServer(typeDefs, resolvers) {
   const httpServer = http.createServer(app)
   const server = new ApolloServer({
     typeDefs,
-    resolvers: { Query, Book, Author, Mutation },
+    resolvers,
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   })
   await server.start()
@@ -32,4 +32,4 @@ async function startApolloServer(typeDefs, resolvers) {
   )
 }
 
-startApolloServer(typeDefs)
+startApolloServer(typeDefs, resolvers)
