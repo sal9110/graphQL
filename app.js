@@ -1,22 +1,35 @@
 require("dotenv").config()
 const express = require("express")
-const { graphqlHTTP } = require("express-graphql")
-const schema = require("./schema/schema")
+const { ApolloServer } = require("apollo-server-express")
+const { ApolloServerPluginDrainHttpServer } = require("apollo-server-core")
+const { typeDefs } = require("./schema/schema")
+const { Query, Book, Author, Mutation } = require("./resolvers")
 const mongoose = require("mongoose")
 const cors = require("cors")
+const http = require("http")
 
-const app = express()
 const PORT = 4000
-
-app.use(cors())
 
 mongoose.connect(process.env.MONGO_URI)
 mongoose.connection.once("open", () => {
   console.log("connected to database")
 })
 
-app.use("/graphql", graphqlHTTP({ schema, graphiql: true }))
+async function startApolloServer(typeDefs, resolvers) {
+  const app = express()
+  const httpServer = http.createServer(app)
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers: { Query, Book, Author, Mutation },
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  })
+  await server.start()
+  server.applyMiddleware({ app })
+  app.use(cors())
+  await new Promise((resolve) => httpServer.listen({ port: PORT }, resolve))
+  console.log(
+    `🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`
+  )
+}
 
-app.listen(PORT, () => {
-  console.log("server running on port " + PORT)
-})
+startApolloServer(typeDefs)
